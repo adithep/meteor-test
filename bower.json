@@ -1,0 +1,8 @@
+{
+  "name": "alpha-bower",
+  "dependencies": {
+    "jquery": "*",
+    "foundation": "*",
+    "modernizr": "*"
+  }
+}

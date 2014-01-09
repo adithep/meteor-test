@@ -1,0 +1,22 @@
+[
+  {
+    "name": "contact_button_list",
+    "type": "type"
+  },
+  {
+    "name": "countries_list",
+    "type": "type"
+  },
+  {
+    "name": "humans",
+    "type": "type"
+  },
+  {
+    "name": "initials_list",
+    "type": "type"
+  },
+  {
+    "name": "city",
+    "type": "type"
+  }
+]

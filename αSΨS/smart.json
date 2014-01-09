@@ -1,0 +1,13 @@
+{
+  "packages": {
+    "zurb-foundation": {},
+    "iron-router": {
+      "git": "https://github.com/EventedMind/iron-router.git",
+      "branch": "shark"
+    },
+    "npm": {},
+    "node-csv-npm": {},
+    "autocomplete": {},
+    "select2": {}
+  }
+}
