@@ -1,0 +1,177 @@
+head
+  meta(name="viewport", content="width=device-width, initial-scale=1.0")
+  title αSΨS
+
+body
+
+template(name="layout")
+  {{> _init_foundation}}
+  div(id="parent")
+    nav(class="top-bar", data-topbar)
+      ul(class="title-area")
+        li(class="name")
+          h1
+            a(href="/") αSΨS
+        li(class="toggle-topbar menu-icon")
+          a
+            span Menu
+      section(class="top-bar-section")
+        ul(class="left")
+          li(class="divider")
+          li
+            a(data-path="an", href="/moduletest") moduleTest
+          li
+            a(data-path="an", href="/add_contact") Add Contact
+        ul(class="right")
+          li(class="divider")
+          li(class="has-dropdown")
+            a User : {{currentUser.username}}
+            ul(class="dropdown")
+              li
+                a(id="logout") logout
+    div(class="row")
+      div(class="large-12 columns")
+      {{>yield}}
+
+template(name="add_contact")
+  h1 Add Contacts
+  a(class="right button save_contact_json alert") Save
+  form
+
+    div(class="row")
+      div(class="large-2 columns")
+        a(class="button individual") Individual
+      div(class="large-2 columns left")
+        a(class="button company") Company
+    {{#if company}}
+
+    div(class="row company_div")
+      {{#each input_company}}
+      {{> contact_button}}
+      {{/each}}
+
+    div(class="row")
+      ul(class="button-group radius")
+        {{#each buttons_company}}
+        li 
+          a(class="button tiny add_contact_button_company", data-id="{{_id._str}}") {{inner_html}}
+        {{/each}}
+    {{else}}
+
+    div(class="row individual_div")
+      {{#each input_individual}}
+      {{> contact_button}}
+      {{/each}}
+
+    div(class="row")
+      ul(class="button-group radius")
+        {{#each buttons_individual}}
+        li 
+          a(class="button tiny add_contact_button_individual", data-id="{{_id._str}}") {{inner_html}}
+        {{/each}}
+    {{/if}}
+
+    a(class="submit button") Submit
+    
+template(name="contact_button")
+
+    {{#if input_starting}}
+    div(class="large-4 columns left")
+      input(type="{{input_type}}", placeholder="{{input_placeholder}}", name="{{input_name}}", data-array="{{array}}", class="{{input_class}}")
+    {{else}}{{#if select_starting}}
+    div(class="left")
+      select(name="{{select_name}}", data-array="{{array}}", class="{{select_class}}") 
+        | {{#each countries this.select_database._str}}
+        | <option value="{{this._id._str}}"> {{this.name}} </option>
+        | {{/each}}
+    {{else}}{{#if input_name}}
+    div(class="large-4 columns left")
+      div(class="row collapse")
+        div(class="small-10 columns")
+          input(type="{{input_type}}", placeholder="{{input_placeholder}}", name="{{input_name}}", data-array="{{array}}", class="{{input_class}}")
+        div(class="small-2 columns")
+          a(class="button postfix alert {{input}}", data-index="{{index}}") X
+    {{else}}{{#if select_name}}
+    div(class="left")
+      div(class="row collapse")
+        div(class="small-10 columns")
+          select(name="{{select_name}}", data-array="{{array}}", class="{{select_class}}") 
+            | {{#each countries this.select_database._str}}
+            | <option value="{{this._id._str}}"> {{this.name}} </option>
+            | {{/each}}
+        div(class="small-2 columns")
+          a(class="button postfix alert {{input}}", data-index="{{index}}") X
+    {{else}}{{#if input_select_name}}
+    div(class="large-4 columns left")
+      div(class="row collapse")
+        div(class="small-10 columns")
+          input(type="{{input_type}}", list="cities", placeholder="{{input_placeholder}}", name="{{input_select_name}}", data-database="{{select_database._str}}", data-array="{{array}}", class="input_select {{input_class}}")
+          div(id="cities", class="panel input_select_box")
+            ul(class="input_select_list") {{#each input_select this.select_database._str}}
+              {{> select_list}}
+              {{/each}}
+        div(class="small-2 columns")
+          a(class="button postfix alert {{input}}", data-index="{{index}}") X
+    {{/if}}
+    {{/if}}
+    {{/if}}
+    {{/if}}
+    {{/if}}
+template(name="select_list")
+  li(class="lala_item {{this.e_class}}", data-value="{{this._id._str}}") {{this.name}} {{this.country}}
+template(name="moduleTest")
+  dl(class="sub-nav")
+    dt Click:
+    dd
+      a(class="add", data-path="an", href="{{route 'an'}}") an
+    dd
+      a(class="add", data-path="lu", href="{{route 'lu'}}") lu
+    dd
+      a(class="add", data-path="postlists", href="{{route 'postlists'}}") postlists
+  div(id="child")
+
+template(name="postlists")
+  {{> posts this}}
+template(name="an")
+  div(class="an panel")
+    h1 αan
+    a(href="{{close 'an'}}", class="close") Click
+    br
+    button(class="click") log
+
+template(name="lu")
+  div(class="lu panel")
+    h1 αlu
+    a(href="{{close 'lu'}}", class="close") Click
+
+template(name="login")
+  div(class="row", id="logindiv")
+    div(class="large-12 columns")
+      h1 Login
+      {{#if currentUser.username}}
+      {{else}}
+      {{#if loggingIn}}
+      p Logging in...
+      {{else}}
+      {{#if creatingAccount}}
+      {{>newAccountForm}}
+      {{else}}
+      {{>loginForm}}
+      {{/if}}
+      {{/if}}
+      {{/if}}
+
+template(name="newAccountForm")
+  input(type="text", id="email", placeholder="email")
+  input(type="text", id="name", placeholder="name")
+  input(type="text", id="username", placeholder="username")
+  input(type="password", id="password", placeholder="password")
+  button(id="createaccount") Create
+  p(id="loginform") (Login)
+
+template(name="loginForm")
+  input(type="text", id="username", placeholder="username")
+  input(type="password", id="password", placeholder="password")
+  button(id="login") Login
+  br
+  button(id="accountform") Create Account
