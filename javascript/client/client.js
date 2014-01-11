@@ -215,6 +215,11 @@ ALPHA = (function() {
           a = pargs.sb.init(this);
           pargs.input = this.reactive_input;
           pargs.session = false;
+          pargs.INDIVIDUAL = new Meteor.Collection(null);
+          pargs.COMPANY = new Meteor.Collection(null);
+          pargs.CITIES = new Meteor.Collection(null, {
+            idGeneration: "MONGO"
+          });
           if (a.routes) {
             pargs.sb.map_router(a.routes);
           }
@@ -233,40 +238,51 @@ ALPHA = (function() {
         },
         'subscribe list': function(args) {
           var b, c, d;
-          console.log("lists subscribed");
           b = DATA.findOne({
-            select_name: "initials"
+            'input.select_name': "initials"
           }, {
             fields: {
               _id: 0
             }
           });
           c = DATA.findOne({
-            input_name: "first_name"
+            'input.input_name': "first_name"
           }, {
             fields: {
               _id: 0
             }
           });
           d = DATA.findOne({
-            input_name: "company_name"
+            'input.input_name': "company_name"
           }, {
             fields: {
               _id: 0
             }
           });
           if (b) {
-            pargs.input.spush('individual', b);
+            pargs.INDIVIDUAL.insert({
+              input: b.input,
+              columns: b.columns
+            });
           }
           if (c) {
-            pargs.input.spush('individual', c);
+            pargs.INDIVIDUAL.insert({
+              input: c.input,
+              columns: c.columns
+            });
           }
           if (d) {
-            return pargs.input.spush('company', d);
+            return pargs.COMPANY.insert({
+              input: d.input,
+              columns: d.columns
+            });
           }
         },
         'subscribe countries_list': function(args) {
           return console.log("countries subscribed");
+        },
+        'subscribe currency': function(args) {
+          return console.log("currency subscribed");
         },
         'route add_contact add_contact/:ll': function(args) {},
         'route add_contact add_contact': function(args) {
@@ -335,22 +351,21 @@ ALPHA = (function() {
             });
           }
         },
+        'helper date_t': function(args) {
+          var a, b;
+          a = new Date();
+          a.setHours(0, -a.getTimezoneOffset(), 0, 0);
+          b = a.toISOString().substring(0, 10);
+          return b;
+        },
         'helper input_select': function(args) {
-          console.log(args.spacebar_arg);
-          return DATA.find({
-            type: {
-              _str: args.spacebar_arg
-            }
-          });
+          return pargs.CITIES.find();
         },
         'helper input_company': function(args) {
-          return pargs.input.get('company');
+          return pargs.COMPANY.find();
         },
         'helper input_individual': function(args) {
-          var a;
-          a = pargs.input.get('individual');
-          console.log(a);
-          return a;
+          return pargs.INDIVIDUAL.find();
         },
         'event click .individual': function(args) {
           return pargs.sb.session_set({
@@ -409,7 +424,7 @@ ALPHA = (function() {
           }
         },
         'event keyup .input_select': function(args) {
-          var b, d, params, subs;
+          var b, d, params;
           if (args.e.which === 40) {
             if ($('.lala_item').hasClass("blue_color") === false) {
               $('.input_select_list li:first-child').addClass("blue_color");
@@ -460,11 +475,93 @@ ALPHA = (function() {
                 input: args.e.currentTarget.value,
                 field: args.e.currentTarget.dataset.database
               };
-              subs = Meteor.subscribe("cities_list", params);
-              if (pargs.session) {
-                pargs.session.stop();
+              Meteor.subscribe("cities_list", params, function() {
+                var a;
+                d = new Meteor.Collection.ObjectID(args.e.currentTarget.dataset.database);
+                a = DATA.find({
+                  $and: [
+                    {
+                      type: d
+                    }, {
+                      $or: [
+                        {
+                          name: {
+                            $regex: params.input,
+                            $options: 'i'
+                          }
+                        }, {
+                          country: {
+                            $regex: params.input,
+                            $options: 'i'
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }, {
+                  limit: 5
+                }).fetch();
+                if (a) {
+                  a[0].e_class = "blue_color";
+                  pargs.CITIES.remove({});
+                  return _.map(a, function(obj) {
+                    return pargs.CITIES.insert(obj);
+                  });
+                }
+              });
+            }
+          }
+        },
+        'event blur .input_mobile': function(args) {
+          var a;
+          console.log(args.e.currentTarget.dataset.value);
+          if (args.e.currentTarget.dataset.value === "" || args.e.currentTarget.dataset.value === void 0) {
+            args.e.currentTarget.value = "";
+          } else {
+            a = formatInternational(args.e.currentTarget.dataset.country, args.e.currentTarget.dataset.value);
+            args.e.currentTarget.value = a;
+          }
+        },
+        'event keyup .input_mobile': function(args) {
+          var countryCode, e164, e164_1, number, sub;
+          number = args.e.currentTarget.value;
+          e164 = formatE164("TH", number);
+          if (isValidNumber(e164, "TH")) {
+            console.log("valid");
+            args.e.currentTarget.dataset.value = e164;
+            args.e.currentTarget.dataset.country = "TH";
+          } else {
+            if (number.length >= 2) {
+              if (number.substring(0, 1) === "+") {
+                if (number.length >= 3) {
+                  sub = number.substring(1, 2);
+                }
+              } else {
+                sub = number.substring(0, 2);
               }
-              pargs.session = subs;
+              countryCode = DATA.findOne({
+                callingCode: sub
+              });
+              if (countryCode) {
+                e164_1 = formatE164(countryCode.cca2, number);
+                if (isValidNumber(e164_1, countryCode.cca2)) {
+                  console.log("valid");
+                  args.e.currentTarget.dataset.value = e164_1;
+                  args.e.currentTarget.dataset.country = countryCode.cca2;
+                } else {
+                  console.log("invalid");
+                  args.e.currentTarget.dataset.value = "";
+                  args.e.currentTarget.dataset.country = "";
+                }
+              } else {
+                console.log("invalid");
+                args.e.currentTarget.dataset.value = "";
+                args.e.currentTarget.dataset.country = "";
+              }
+            } else {
+              console.log("invalid");
+              args.e.currentTarget.dataset.value = "";
+              args.e.currentTarget.dataset.country = "";
             }
           }
         },
@@ -476,37 +573,66 @@ ALPHA = (function() {
           _.map(a, function(num) {
             var d;
             if (num.localName === "input") {
-              if (num.dataset.array === "0") {
-                b[num.name] = num.value;
-              } else if (num.dataset.array === "1") {
-                if (b[num.name] === void 0) {
-                  b[num.name] = [];
-                  b[num.name].push(num.value);
-                } else {
-                  b[num.name].push(num.value);
+              if ($(num).hasClass("input_select")) {
+                if (num.dataset.value !== "" && num.dataset.value !== void 0) {
+                  d = new Meteor.Collection.ObjectID(num.dataset.value);
+                  if (num.dataset.array === "0") {
+                    b[num.name] = d;
+                  } else if (num.dataset.array === "1") {
+                    if (b[num.name] === void 0) {
+                      b[num.name] = [];
+                      b[num.name].push(d);
+                    } else {
+                      b[num.name].push(d);
+                    }
+                  }
+                }
+              } else {
+                if (num.value !== "" && num.value !== void 0) {
+                  if (num.dataset.array === "0") {
+                    b[num.name] = num.value;
+                  } else if (num.dataset.array === "1") {
+                    if (b[num.name] === void 0) {
+                      b[num.name] = [];
+                      b[num.name].push(num.value);
+                    } else {
+                      b[num.name].push(num.value);
+                    }
+                  }
                 }
               }
             } else if (num.localName === "select") {
-              d = new Meteor.Collection.ObjectID(num.value);
-              if (num.dataset.array === "0") {
-                b[num.name] = d;
-              } else if (num.dataset.array === "1") {
-                if (b[num.name] === void 0) {
-                  b[num.name] = [];
-                  b[num.name].push(d);
-                } else {
-                  b[num.name].push(d);
+              if (num.value !== "" && num.value !== void 0) {
+                d = new Meteor.Collection.ObjectID(num.value);
+                if (num.dataset.array === "0") {
+                  b[num.name] = d;
+                } else if (num.dataset.array === "1") {
+                  if (b[num.name] === void 0) {
+                    b[num.name] = [];
+                    b[num.name].push(d);
+                  } else {
+                    b[num.name].push(d);
+                  }
                 }
               }
             }
-            return b;
           });
           console.log(b);
           params = {
             human: b
           };
-          return Meteor.call('insert_human', params, function() {
+          Meteor.call('insert_human', params, function() {
             return console.log("inserted");
+          });
+          _.map(a, function(num) {
+            if ($(num).hasClass("input_select")) {
+              num.dataset.value = "";
+              num.value = "";
+            } else if (num.localName === "input") {
+              num.value = "";
+            } else if (num.localName === "select") {
+              num.selectedIndex = 0;
+            }
           });
         },
         'event click .save_contact_json': function(args) {
@@ -515,7 +641,7 @@ ALPHA = (function() {
           });
         },
         'event click .add_contact_button_individual': function(args) {
-          var a, c;
+          var a, arr, c, j;
           a = args.e.currentTarget.getAttribute('data-id');
           c = DATA.findOne({
             _id: {
@@ -526,12 +652,36 @@ ALPHA = (function() {
               _id: 0
             }
           });
-          c.input = "remove_input_individual";
-          console.log(c);
-          return pargs.input.spush('individual', c);
+          arr = c.input;
+          c.input[arr.length - 1].remove = "remove_input_individual";
+          console.log(c.input);
+          if (c.array === 1) {
+            return pargs.INDIVIDUAL.insert({
+              input: c.input,
+              columns: c.columns,
+              name: c.name,
+              array: c.array
+            });
+          } else if (c.array === 0) {
+            j = pargs.INDIVIDUAL.find({
+              name: c.name
+            }).fetch();
+            if (j.length === 0) {
+              return pargs.INDIVIDUAL.insert({
+                input: c.input,
+                columns: c.columns,
+                name: c.name,
+                array: c.array
+              });
+            } else {
+              return pargs.INDIVIDUAL.remove({
+                name: c.name
+              });
+            }
+          }
         },
         'event click .add_contact_button_company': function(args) {
-          var a, c;
+          var a, arr, c, j;
           a = args.e.currentTarget.getAttribute('data-id');
           c = DATA.findOne({
             _id: {
@@ -542,19 +692,46 @@ ALPHA = (function() {
               _id: 0
             }
           });
-          console.log(c);
-          c.input = "remove_input_company";
-          return pargs.input.spush('company', c);
+          arr = c.input;
+          c.input[arr.length - 1].remove = "remove_input_company";
+          if (c.array === 1) {
+            return pargs.COMPANY.insert({
+              input: c.input,
+              columns: c.columns,
+              name: c.name,
+              array: c.array
+            });
+          } else if (c.array === 0) {
+            j = pargs.COMPANY.find({
+              name: c.name
+            }).fetch();
+            if (j.length === 0) {
+              return pargs.COMPANY.insert({
+                input: c.input,
+                columns: c.columns,
+                name: c.name,
+                array: c.array
+              });
+            } else {
+              return pargs.COMPANY.remove({
+                name: c.name
+              });
+            }
+          }
         },
         'event click .remove_input_individual': function(args) {
-          var index;
-          index = args.e.currentTarget.getAttribute('data-index');
-          return pargs.input.spop('individual', index);
+          var id;
+          id = $(args.e.currentTarget).closest('div .input_obj').data('id');
+          return pargs.INDIVIDUAL.remove({
+            _id: id
+          });
         },
         'event click .remove_input_company': function(args) {
-          var index;
-          index = args.e.currentTarget.getAttribute('data-index');
-          return pargs.input.spop('company', index);
+          var id;
+          id = $(args.e.currentTarget).closest('div .input_obj').data('id');
+          return pargs.COMPANY.remove({
+            _id: id
+          });
         },
         reactive_input: {
           _dep: new Deps.Dependency(),
@@ -977,18 +1154,6 @@ ALPHA = (function() {
 })();
 
 α = new ALPHA();
-
-Template.select_list.rendered = function() {
-  if ($('.lala_item').hasClass("blue_color") === false) {
-    return $('.input_select_list li:first-child').addClass("blue_color");
-  }
-};
-
-Template.select_list.destroyed = function() {
-  if ($('.lala_item').hasClass("blue_color") === false) {
-    return $('.input_select_list li:first-child').addClass("blue_color");
-  }
-};
 
 α.Core.start_all({
   sb: α.Sandbox.create,

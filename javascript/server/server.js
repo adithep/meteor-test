@@ -91,10 +91,12 @@ Meteor.publish("type", function() {
 Meteor.publish("list", function() {
   var contact_button, initials_list;
   contact_button = DATA.findOne({
-    name: "contact_button_list"
+    name: "contact_button_list",
+    type: "type"
   });
   initials_list = DATA.findOne({
-    name: "initials_list"
+    name: "initials_list",
+    type: "type"
   });
   return DATA.find({
     $or: [
@@ -112,22 +114,45 @@ Meteor.publish("list", function() {
 Meteor.publish("countries_list", function() {
   var b;
   b = DATA.findOne({
-    name: "countries_list"
+    name: "countries_list",
+    type: "type"
   });
-  if (b) {
-    return DATA.find({
-      type: b._id
-    }, {
-      sort: {
-        name: 1
-      }
-    }, {
-      fields: {
-        name: 1,
-        type: 1
-      }
-    });
-  }
+  return DATA.find({
+    type: b._id
+  }, {
+    sort: {
+      name: 1
+    },
+    fields: {
+      name: 1,
+      type: 1,
+      callingCode: 1,
+      cca2: 1
+    }
+  });
+});
+
+Meteor.publish("currency", function() {
+  var b;
+  b = DATA.findOne({
+    name: "currency",
+    type: "type"
+  });
+  return DATA.find({
+    type: b._id
+  }, {
+    sort: {
+      name: 1
+    },
+    fields: {
+      name: 1,
+      type: 1,
+      symbol: 1,
+      usd_exchange_rate: 1,
+      country: 1,
+      "default": 1
+    }
+  });
 });
 
 Meteor.publish("cities_list", function(args) {
@@ -168,7 +193,8 @@ Meteor.publish("cities_list", function(args) {
 Meteor.publish("initials_list", function() {
   var b;
   b = DATA.findOne({
-    name: "initials_list"
+    name: "initials_list",
+    type: "type"
   });
   if (b) {
     return DATA.find({
@@ -198,11 +224,41 @@ removeman = function() {
 };
 
 Meteor.startup(function() {
-  var button_list, cities_list, countries, initials_list, j, shit, types;
+  var button_list, cities_list, countries, initials_list, j, shit, shit1, shit2, shit3, types;
   shit = DATA.findOne({
-    name: "contact_button_list"
+    name: "contact_button_list",
+    type: "type"
+  });
+  shit1 = DATA.findOne({
+    name: "initials_list",
+    type: "type"
+  });
+  shit2 = DATA.findOne({
+    name: "currency",
+    type: "type"
+  });
+  shit3 = DATA.findOne({
+    name: "countries_list",
+    type: "type"
   });
   /*
+  
+  currency = EJSON.parse(Assets.getText("currency.json"))
+  
+  _.map currency, (obj) ->
+    b = DATA.find(currency: obj.name, type: shit3._id).fetch()
+    c = []
+    d = []
+    if b
+      _.map b, (jack) ->
+        c.push(jack._id)
+        d.push(jack.name)
+  
+      DATA.insert(name: obj.name, usd_exchange_rate: obj.usd_exchange_rate, type: shit2._id, country: c, country_name: d, symbol: obj.symbol, symbol_native: obj.symbol_native, currency_name: obj.currency_name, currency_code: obj.currency_code, currency_name_plural: obj.currency_name_plural)
+  
+  console.log "Done"
+  
+  
   
   
   csv_file = path.join('/Users/Adithep/Desktop/αSys/csv', 'cities5000.txt')
@@ -224,9 +280,12 @@ Meteor.startup(function() {
   
   
   
-  c = path.join('/Users/Adithep/Desktop/αSys/json', 'cities.json')
-  h = DATA.find({type: 'city'}, {fields: _id: 0}).fetch()
-  fs.writeFile c, JSON.stringify(h), (err) ->
+  c = path.join('/Users/Adithep/Desktop/αSys/json', 'currency.json')
+  h = DATA.find({type: shit2._id}, {fields: _id: 0, country: 0}).fetch()
+  _.map h, (obj) ->
+    obj.type = "currency"
+    return
+  fs.writeFile c, EJSON.stringify(h, indent: true), (err) ->
     if err
       throw err
     else
@@ -283,19 +342,42 @@ Meteor.startup(function() {
   }).count() === 0) {
     button_list = EJSON.parse(Assets.getText("button_list.json"));
     _.map(button_list, function(num) {
-      var a, b;
+      var a;
       a = DATA.findOne({
         name: num.type
       });
       num.type = a._id;
-      if (num.select_database) {
-        b = DATA.findOne({
-          name: num.select_database
-        });
-        num.select_database = b._id;
-      }
+      _.map(num.input, function(numa) {
+        var b;
+        if (numa.select_database) {
+          b = DATA.findOne({
+            name: numa.select_database
+          });
+          numa.select_database = b._id;
+          return;
+        }
+        if (numa.input_select_database) {
+          b = DATA.findOne({
+            name: numa.input_select_database
+          });
+          numa.input_select_database = b._id;
+        }
+      });
       return DATA.insert(num);
     });
     return console.log("button lists inserted");
+  } else if (DATA.find({
+    type: shit1._id
+  }).count() === 0) {
+    initials_list = EJSON.parse(Assets.getText("initials_list.json"));
+    _.map(initials_list, function(num) {
+      var a;
+      a = DATA.findOne({
+        name: num.type
+      });
+      num.type = a._id;
+      return DATA.insert(num);
+    });
+    return console.log("initials lists inserted");
   }
 });

@@ -36,89 +36,76 @@ template(name="layout")
 template(name="add_contact")
   h1 Add Contacts
   a(class="right button save_contact_json alert") Save
-  form
 
-    div(class="row")
-      div(class="large-2 columns")
-        a(class="button individual") Individual
-      div(class="large-2 columns left")
-        a(class="button company") Company
-    {{#if company}}
+  div(class="row")
+    div(class="large-2 columns")
+      a(class="button individual") Individual
+    div(class="large-2 columns left")
+      a(class="button company") Company
+  {{#if company}}
 
-    div(class="row company_div")
-      {{#each input_company}}
-      {{> contact_button}}
+  div(class="row company_div")
+    {{#each input_company}}
+    {{> contact_button}}
+    {{/each}}
+
+  div(class="row")
+    ul(class="button-group radius")
+      {{#each buttons_company}}
+      li 
+        a(class="button tiny add_contact_button_company", data-id="{{_id._str}}") {{inner_html}}
       {{/each}}
+  {{else}}
 
-    div(class="row")
-      ul(class="button-group radius")
-        {{#each buttons_company}}
-        li 
-          a(class="button tiny add_contact_button_company", data-id="{{_id._str}}") {{inner_html}}
-        {{/each}}
-    {{else}}
+  div(class="row individual_div")
+    {{#each input_individual}}
+    {{> contact_button}}
+    {{/each}}
 
-    div(class="row individual_div")
-      {{#each input_individual}}
-      {{> contact_button}}
+  div(class="row")
+    ul(class="button-group radius")
+      {{#each buttons_individual}}
+      li 
+        a(class="button tiny add_contact_button_individual", data-id="{{_id._str}}") {{inner_html}}
       {{/each}}
+  {{/if}}
 
-    div(class="row")
-      ul(class="button-group radius")
-        {{#each buttons_individual}}
-        li 
-          a(class="button tiny add_contact_button_individual", data-id="{{_id._str}}") {{inner_html}}
-        {{/each}}
-    {{/if}}
-
-    a(class="submit button") Submit
+  a(class="submit button") Submit
     
 template(name="contact_button")
-
-    {{#if input_starting}}
-    div(class="large-4 columns left")
-      input(type="{{input_type}}", placeholder="{{input_placeholder}}", name="{{input_name}}", data-array="{{array}}", class="{{input_class}}")
-    {{else}}{{#if select_starting}}
-    div(class="left")
-      select(name="{{select_name}}", data-array="{{array}}", class="{{select_class}}") 
-        | {{#each countries this.select_database._str}}
-        | <option value="{{this._id._str}}"> {{this.name}} </option>
-        | {{/each}}
-    {{else}}{{#if input_name}}
-    div(class="large-4 columns left")
-      div(class="row collapse")
-        div(class="small-10 columns")
-          input(type="{{input_type}}", placeholder="{{input_placeholder}}", name="{{input_name}}", data-array="{{array}}", class="{{input_class}}")
-        div(class="small-2 columns")
-          a(class="button postfix alert {{input}}", data-index="{{index}}") X
-    {{else}}{{#if select_name}}
-    div(class="left")
-      div(class="row collapse")
-        div(class="small-10 columns")
-          select(name="{{select_name}}", data-array="{{array}}", class="{{select_class}}") 
-            | {{#each countries this.select_database._str}}
-            | <option value="{{this._id._str}}"> {{this.name}} </option>
-            | {{/each}}
-        div(class="small-2 columns")
-          a(class="button postfix alert {{input}}", data-index="{{index}}") X
-    {{else}}{{#if input_select_name}}
-    div(class="large-4 columns left")
-      div(class="row collapse")
-        div(class="small-10 columns")
-          input(type="{{input_type}}", list="cities", placeholder="{{input_placeholder}}", name="{{input_select_name}}", data-database="{{select_database._str}}", data-array="{{array}}", class="input_select {{input_class}}")
-          div(id="cities", class="panel input_select_box")
-            ul(class="input_select_list") {{#each input_select this.select_database._str}}
-              {{> select_list}}
-              {{/each}}
-        div(class="small-2 columns")
-          a(class="button postfix alert {{input}}", data-index="{{index}}") X
-    {{/if}}
-    {{/if}}
-    {{/if}}
-    {{/if}}
-    {{/if}}
+  div(class="{{columns}} left input_obj", data-id="{{_id}}", data-array="{{array}}")
+    div(class="row collapse"){{#each this.input}}{{#if input_name}}
+      div(class="{{input_columns}}")
+        input(type="{{input_type}}", placeholder="{{input_placeholder}}", name="{{input_name}}", class="{{input_class}}")
+      {{/if}}
+      {{#if select_name}}
+      div(class="{{select_columns}}")
+        select(name="{{select_name}}", class="{{select_class}} {{select_database}}") {{#each countries this.select_database._str}}
+          {{#if default}}
+          option(value="{{this._id._str}}", selected) {{this.name}}
+          {{else}}
+          option(value="{{this._id._str}}") {{this.name}}
+          {{/if}}
+          {{/each}}
+      {{/if}}
+      {{#if input_select_name}}
+      div(class="{{input_select_columns}}")
+        input(type="{{input_type}}", autocomplete="off", placeholder="{{input_placeholder}}", name="{{input_select_name}}", data-database="{{input_select_database._str}}", class="input_select {{input_select_class}}")
+        div(id="cities", class="panel input_select_box")
+          ul(class="input_select_list") {{#each input_select input_select_database._str}}
+            {{> select_list}}
+            {{/each}}
+      {{/if}}
+      {{#if close}}
+      div(class="{{input_close}}")
+        a(class="button postfix alert {{remove}}", data-id="{{_id}}") X
+      {{/if}}
+      {{/each}}
 template(name="select_list")
+
+
   li(class="lala_item {{this.e_class}}", data-value="{{this._id._str}}") {{this.name}} {{this.country}}
+
 template(name="moduleTest")
   dl(class="sub-nav")
     dt Click:

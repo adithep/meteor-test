@@ -36,85 +36,63 @@
 </template>
 <template name="add_contact">
   <h1>Add Contacts</h1><a class="right button save_contact_json alert">Save</a>
-  <form>
-    <div class="row">
-      <div class="large-2 columns"><a class="button individual">Individual</a></div>
-      <div class="large-2 columns left"><a class="button company">Company</a></div>
-    </div>{{#if company}}
-    <div class="row company_div">
-      {{#each input_company}}
-      {{> contact_button}}
-      {{/each}}
-    </div>
-    <div class="row">
-      <ul class="button-group radius">{{#each buttons_company}}
-        <li> <a data-id="{{_id._str}}" class="button tiny add_contact_button_company">{{inner_html}}</a></li>{{/each}}
-      </ul>
-    </div>{{else}}
-    <div class="row individual_div">
-      {{#each input_individual}}
-      {{> contact_button}}
-      {{/each}}
-    </div>
-    <div class="row">
-      <ul class="button-group radius">{{#each buttons_individual}}
-        <li> <a data-id="{{_id._str}}" class="button tiny add_contact_button_individual">{{inner_html}}</a></li>{{/each}}
-      </ul>
-    </div>{{/if}}<a class="submit button">Submit</a>
-  </form>
+  <div class="row">
+    <div class="large-2 columns"><a class="button individual">Individual</a></div>
+    <div class="large-2 columns left"><a class="button company">Company</a></div>
+  </div>{{#if company}}
+  <div class="row company_div">
+    {{#each input_company}}
+    {{> contact_button}}
+    {{/each}}
+  </div>
+  <div class="row">
+    <ul class="button-group radius">{{#each buttons_company}}
+      <li> <a data-id="{{_id._str}}" class="button tiny add_contact_button_company">{{inner_html}}</a></li>{{/each}}
+    </ul>
+  </div>{{else}}
+  <div class="row individual_div">
+    {{#each input_individual}}
+    {{> contact_button}}
+    {{/each}}
+  </div>
+  <div class="row">
+    <ul class="button-group radius">{{#each buttons_individual}}
+      <li> <a data-id="{{_id._str}}" class="button tiny add_contact_button_individual">{{inner_html}}</a></li>{{/each}}
+    </ul>
+  </div>{{/if}}<a class="submit button">Submit</a>
 </template>
-<template name="contact_button">{{#if input_starting}}
-  <div class="large-4 columns left">
-    <input type="{{input_type}}" placeholder="{{input_placeholder}}" name="{{input_name}}" data-array="{{array}}" class="{{input_class}}"/>
-  </div>{{else}}{{#if select_starting}}
-  <div class="left">
-    <select name="{{select_name}}" data-array="{{array}}" class="{{select_class}}">
-       
-      {{#each countries this.select_database._str}}
-      <option value="{{this._id._str}}"> {{this.name}} </option>
-      {{/each}}
-    </select>
-  </div>{{else}}{{#if input_name}}
-  <div class="large-4 columns left">
-    <div class="row collapse">
-      <div class="small-10 columns">
-        <input type="{{input_type}}" placeholder="{{input_placeholder}}" name="{{input_name}}" data-array="{{array}}" class="{{input_class}}"/>
-      </div>
-      <div class="small-2 columns"><a data-index="{{index}}" class="button postfix alert {{input}}">X</a></div>
-    </div>
-  </div>{{else}}{{#if select_name}}
-  <div class="left">
-    <div class="row collapse">
-      <div class="small-10 columns">
-        <select name="{{select_name}}" data-array="{{array}}" class="{{select_class}}">
-           
+<template name="contact_button">
+  <div data-id="{{_id}}" data-array="{{array}}" class="{{columns}} left input_obj">
+    <div class="row collapse">{{#each this.input}}{{#if input_name}}
+      <div class="{{input_columns}}">
+        <input type="{{input_type}}" placeholder="{{input_placeholder}}" name="{{input_name}}" class="{{input_class}}"/>
+      </div>{{/if}}
+      {{#if select_name}}
+      <div class="{{select_columns}}">
+        <select name="{{select_name}}" class="{{select_class}} {{select_database}}">
           {{#each countries this.select_database._str}}
-          <option value="{{this._id._str}}"> {{this.name}} </option>
+          {{#if default}}
+          <option value="{{this._id._str}}" selected="selected">{{this.name}}</option>{{else}}
+          <option value="{{this._id._str}}">{{this.name}}</option>{{/if}}
           {{/each}}
         </select>
-      </div>
-      <div class="small-2 columns"><a data-index="{{index}}" class="button postfix alert {{input}}">X</a></div>
-    </div>
-  </div>{{else}}{{#if input_select_name}}
-  <div class="large-4 columns left">
-    <div class="row collapse">
-      <div class="small-10 columns">
-        <input type="{{input_type}}" list="cities" placeholder="{{input_placeholder}}" name="{{input_select_name}}" data-database="{{select_database._str}}" data-array="{{array}}" class="input_select {{input_class}}"/>
+      </div>{{/if}}
+      {{#if input_select_name}}
+      <div class="{{input_select_columns}}">
+        <input type="{{input_type}}" autocomplete="off" placeholder="{{input_placeholder}}" name="{{input_select_name}}" data-database="{{input_select_database._str}}" class="input_select {{input_select_class}}"/>
         <div id="cities" class="panel input_select_box">
           <ul class="input_select_list">
-            {{#each input_select this.select_database._str}}
+            {{#each input_select input_select_database._str}}
             {{> select_list}}
             {{/each}}
           </ul>
         </div>
-      </div>
-      <div class="small-2 columns"><a data-index="{{index}}" class="button postfix alert {{input}}">X</a></div>
+      </div>{{/if}}
+      {{#if close}}
+      <div class="{{input_close}}"><a data-id="{{_id}}" class="button postfix alert {{remove}}">X</a></div>{{/if}}
+      {{/each}}
     </div>
-  </div>{{/if}}
-  {{/if}}
-  {{/if}}
-  {{/if}}
-  {{/if}}
+  </div>
 </template>
 <template name="select_list">
   <li data-value="{{this._id._str}}" class="lala_item {{this.e_class}}">{{this.name}} {{this.country}}</li>
