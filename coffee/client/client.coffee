@@ -159,6 +159,9 @@ class ALPHA
         a = pargs.sb.init(@)
         pargs.input = @reactive_input
         pargs.session = false
+        pargs.INDIVIDUAL = new Meteor.Collection(null)
+        pargs.COMPANY = new Meteor.Collection(null)
+        pargs.CITIES = new Meteor.Collection(null, {idGeneration:"MONGO"})
        
         if a.routes
           pargs.sb.map_router(a.routes)
@@ -173,27 +176,33 @@ class ALPHA
 
 
       'subscribe list': (args) ->
-        console.log "lists subscribed"
-        b = DATA.findOne({select_name: "initials"}, {fields: _id: 0})
-        c = DATA.findOne({input_name: "first_name"}, {fields: _id: 0})
-        d = DATA.findOne({input_name: "company_name"}, {fields: _id: 0})
+        b = DATA.findOne({'input.select_name': "initials"}, {fields: _id: 0})
+        c = DATA.findOne({'input.input_name': "first_name"}, {fields: _id: 0})
+        d = DATA.findOne({'input.input_name': "company_name"}, {fields: _id: 0})
         if b
-          pargs.input.spush('individual', b)
+          pargs.INDIVIDUAL.insert(input: b.input, columns: b.columns)
         if c
-          pargs.input.spush('individual', c)
+          pargs.INDIVIDUAL.insert(input: c.input, columns: c.columns)
         if d
-          pargs.input.spush('company', d)
+          pargs.COMPANY.insert(input: d.input, columns: d.columns)
 
       'subscribe countries_list': (args) ->
+
         console.log "countries subscribed"
+
+      'subscribe currency': (args) ->
+
+        console.log "currency subscribed"
 
       'route add_contact add_contact/:ll': (args) ->
 
 
       'route add_contact add_contact': (args) ->
+
         args.route_this.render('add_contact')
 
       'helper company': (args) ->
+
         pargs.sb.session_get(p: "company")
 
       'helper buttons_individual': (args) ->
@@ -211,22 +220,30 @@ class ALPHA
           console.log args.spacebar_arg
           DATA.find({type: _str: args.spacebar_arg})
 
+      'helper date_t': (args) ->
+        a = new Date()
+        a.setHours(0, -a.getTimezoneOffset(), 0, 0)
+        b = a.toISOString().substring(0, 10)
+        b
+      
       'helper input_select': (args) ->
-        console.log args.spacebar_arg
-        DATA.find(type: _str: args.spacebar_arg)
+
+        pargs.CITIES.find()
 
       'helper input_company': (args) ->
-        pargs.input.get('company')
+
+        pargs.COMPANY.find()
 
       'helper input_individual': (args) ->
-        a = pargs.input.get('individual')
-        console.log a
-        a
+
+        pargs.INDIVIDUAL.find()
 
       'event click .individual': (args) ->
+
         pargs.sb.session_set(p: 'company', v: false)
 
       'event click .company': (args) ->
+
         pargs.sb.session_set(p: 'company', v: true)
 
       'event focus .input_select': (args) ->
@@ -323,47 +340,128 @@ class ALPHA
 
             params = {input: args.e.currentTarget.value, field: args.e.currentTarget.dataset.database}
 
-            subs = Meteor.subscribe "cities_list", params
+            Meteor.subscribe "cities_list", params, ->
+              d = new Meteor.Collection.ObjectID(args.e.currentTarget.dataset.database)
+              a = DATA.find({$and: [{type: d}, $or: [{name: { $regex: params.input, $options: 'i' }}, {country: { $regex: params.input, $options: 'i' }}]]}, { limit: 5 } ).fetch()
+              if a
+                a[0].e_class = "blue_color"
+                pargs.CITIES.remove({})
+                _.map a, (obj) ->
+                  pargs.CITIES.insert(obj)
               
-
-            if pargs.session
-              pargs.session.stop()
-
-            pargs.session = subs
             return
 
+      'event blur .input_mobile': (args) ->
+        console.log args.e.currentTarget.dataset.value
+        if args.e.currentTarget.dataset.value is "" or args.e.currentTarget.dataset.value is undefined
+          args.e.currentTarget.value = ""
+          return
+        else
+          a = formatInternational(args.e.currentTarget.dataset.country, args.e.currentTarget.dataset.value)
+          args.e.currentTarget.value = a
+          return
+
+      'event keyup .input_mobile': (args) ->
+        number = args.e.currentTarget.value
+        e164 = formatE164("TH", number)
+        if isValidNumber(e164, "TH")
+          console.log "valid"
+          args.e.currentTarget.dataset.value = e164
+          args.e.currentTarget.dataset.country = "TH"
+          return
+        else
+          if number.length >= 2
+            if number.substring(0, 1) is "+"
+              if number.length >= 3
+                sub = number.substring(1, 2)
+            else
+              sub = number.substring(0, 2)
+            countryCode = DATA.findOne(callingCode: sub)
+            if countryCode
+              e164_1 = formatE164(countryCode.cca2, number)
+              if isValidNumber(e164_1, countryCode.cca2)
+                console.log "valid"
+                args.e.currentTarget.dataset.value = e164_1
+                args.e.currentTarget.dataset.country = countryCode.cca2
+                return
+              else
+                console.log "invalid"
+                args.e.currentTarget.dataset.value = ""
+                args.e.currentTarget.dataset.country = ""
+                return
+            else
+              console.log "invalid"
+              args.e.currentTarget.dataset.value = ""
+              args.e.currentTarget.dataset.country = ""
+              return
+          else
+            console.log "invalid"
+            args.e.currentTarget.dataset.value = ""
+            args.e.currentTarget.dataset.country = ""
+            return
 
       'event click .submit': (args) ->
         a = args.t.findAll('input, select')
         console.log a
         b = {}
         _.map a, (num) ->
+
           if num.localName is "input"
-            if num.dataset.array is "0"
-              b[num.name] = num.value
-            else if num.dataset.array is "1"
-              if b[num.name] is undefined
-                b[num.name] = []
-                b[num.name].push(num.value)
-              else
-                b[num.name].push(num.value)
+
+            if $(num).hasClass("input_select")
+              if num.dataset.value isnt "" and num.dataset.value isnt undefined
+                d = new Meteor.Collection.ObjectID(num.dataset.value)
+                if num.dataset.array is "0"
+                  b[num.name] = d
+                else if num.dataset.array is "1"
+                  if b[num.name] is undefined
+                    b[num.name] = []
+                    b[num.name].push(d)
+                  else
+                    b[num.name].push(d)
+
+            else
+              if num.value isnt "" and num.value isnt undefined
+                if num.dataset.array is "0"
+                  b[num.name] = num.value
+                else if num.dataset.array is "1"
+                  if b[num.name] is undefined
+                    b[num.name] = []
+                    b[num.name].push(num.value)
+                  else
+                    b[num.name].push(num.value)
 
           else if num.localName is "select"
-            d = new Meteor.Collection.ObjectID(num.value)
-            if num.dataset.array is "0"
-              b[num.name] = d
-            else if num.dataset.array is "1"
-              if b[num.name] is undefined
-                b[num.name] = []
-                b[num.name].push(d)
-              else
-                b[num.name].push(d)
-          b
+            if num.value isnt "" and num.value isnt undefined
+              d = new Meteor.Collection.ObjectID(num.value)
+              if num.dataset.array is "0"
+                b[num.name] = d
+              else if num.dataset.array is "1"
+                if b[num.name] is undefined
+                  b[num.name] = []
+                  b[num.name].push(d)
+                else
+                  b[num.name].push(d)
+          return
         console.log b
         params = {human: b}
 
         Meteor.call 'insert_human', params, ->
           console.log "inserted"
+
+        _.map a, (num) ->
+          if $(num).hasClass("input_select")
+            num.dataset.value = ""
+            num.value = ""
+            return
+          else if num.localName is "input"
+            num.value = ""
+            return
+          else if num.localName is "select"
+            num.selectedIndex = 0
+            return
+
+        return
 
       'event click .save_contact_json': (args) ->
         Meteor.call 'save_contact_json', ->
@@ -372,24 +470,39 @@ class ALPHA
       'event click .add_contact_button_individual': (args) ->
         a = args.e.currentTarget.getAttribute('data-id')
         c = DATA.findOne({_id: _str: a}, {fields: _id: 0})
-        c.input = "remove_input_individual"
-        console.log c
-        pargs.input.spush('individual', c)
+        arr = c.input
+        c.input[arr.length-1].remove = "remove_input_individual"
+        console.log c.input
+        if c.array is 1
+          pargs.INDIVIDUAL.insert(input: c.input, columns: c.columns, name: c.name, array: c.array)
+        else if c.array is 0
+          j = pargs.INDIVIDUAL.find(name: c.name).fetch()
+          if j.length is 0
+            pargs.INDIVIDUAL.insert(input: c.input, columns: c.columns, name: c.name, array: c.array)
+          else
+            pargs.INDIVIDUAL.remove(name: c.name)
 
       'event click .add_contact_button_company': (args) ->
         a = args.e.currentTarget.getAttribute('data-id')
         c = DATA.findOne({_id: _str: a}, {fields: _id: 0})
-        console.log c
-        c.input = "remove_input_company"
-        pargs.input.spush('company', c)
+        arr = c.input
+        c.input[arr.length-1].remove = "remove_input_company"
+        if c.array is 1
+          pargs.COMPANY.insert(input: c.input, columns: c.columns, name: c.name, array: c.array)
+        else if c.array is 0
+          j = pargs.COMPANY.find(name: c.name).fetch()
+          if j.length is 0
+            pargs.COMPANY.insert(input: c.input, columns: c.columns, name: c.name, array: c.array)
+          else
+            pargs.COMPANY.remove(name: c.name)
 
       'event click .remove_input_individual': (args) ->
-        index = args.e.currentTarget.getAttribute('data-index')
-        pargs.input.spop('individual', index)
+        id = $(args.e.currentTarget).closest('div .input_obj').data('id')
+        pargs.INDIVIDUAL.remove(_id: id)
 
       'event click .remove_input_company': (args) ->
-        index = args.e.currentTarget.getAttribute('data-index')
-        pargs.input.spop('company', index)
+        id = $(args.e.currentTarget).closest('div .input_obj').data('id')
+        pargs.COMPANY.remove(_id: id)
 
 
       reactive_input:
@@ -702,13 +815,6 @@ class ALPHA
       a
 
 α = new ALPHA()
-
-Template.select_list.rendered = ->
-  if $('.lala_item').hasClass("blue_color") is false
-    $('.input_select_list li:first-child').addClass("blue_color")
-Template.select_list.destroyed = ->
-  if $('.lala_item').hasClass("blue_color") is false
-    $('.input_select_list li:first-child').addClass("blue_color")
 
 α.Core.start_all(sb: α.Sandbox.create, mod: α.Module)
 

@@ -39,21 +39,25 @@ Meteor.publish "type", ->
   DATA.find(type: "type")
 
 Meteor.publish "list", ->
-  contact_button = DATA.findOne(name: "contact_button_list")
-  initials_list = DATA.findOne(name: "initials_list")
+  contact_button = DATA.findOne(name: "contact_button_list", type: "type")
+  initials_list = DATA.findOne(name: "initials_list", type: "type")
   DATA.find($or: [{type: contact_button._id}, {type: initials_list._id}, {type: "type"}])
 
 Meteor.publish "countries_list", ->
-  b = DATA.findOne(name: "countries_list")
-  if b
-    DATA.find({type: b._id}, {sort: {name: 1}}, {fields: {name: 1, type: 1}})
+  b = DATA.findOne(name: "countries_list", type: "type")
+  DATA.find({type: b._id}, {sort: {name: 1}, fields: {name: 1, type: 1, callingCode: 1, cca2: 1}})
+
+Meteor.publish "currency", ->
+  b = DATA.findOne(name: "currency", type: "type")
+  DATA.find({type: b._id}, {sort: {name: 1}, fields: {name: 1, type: 1, symbol: 1, usd_exchange_rate: 1, country: 1, default: 1}})
 
 Meteor.publish "cities_list", (args) ->
   if args.input
     d = new Meteor.Collection.ObjectID(args.field)
     DATA.find({$and: [{type: d}, $or: [{name: { $regex: args.input, $options: 'i' }}, {country: { $regex: args.input, $options: 'i' }}]]}, { limit: 5, fields: {name: 1, country: 1, type: 1} } )
+
 Meteor.publish "initials_list", ->
-  b = DATA.findOne(name: "initials_list")
+  b = DATA.findOne(name: "initials_list", type: "type")
   if b
     DATA.find({type: b._id})
 
@@ -67,10 +71,31 @@ removeman = ->
 
 Meteor.startup ->
 
-  shit = DATA.findOne(name: "contact_button_list")
+  shit = DATA.findOne(name: "contact_button_list", type: "type")
+  shit1 = DATA.findOne(name: "initials_list", type: "type")
+  shit2 = DATA.findOne(name: "currency", type: "type")
+  shit3 = DATA.findOne(name: "countries_list", type: "type")
+
 
 
   ###
+
+  currency = EJSON.parse(Assets.getText("currency.json"))
+
+  _.map currency, (obj) ->
+    b = DATA.find(currency: obj.name, type: shit3._id).fetch()
+    c = []
+    d = []
+    if b
+      _.map b, (jack) ->
+        c.push(jack._id)
+        d.push(jack.name)
+
+      DATA.insert(name: obj.name, usd_exchange_rate: obj.usd_exchange_rate, type: shit2._id, country: c, country_name: d, symbol: obj.symbol, symbol_native: obj.symbol_native, currency_name: obj.currency_name, currency_code: obj.currency_code, currency_name_plural: obj.currency_name_plural)
+
+  console.log "Done"
+
+
   
 
   csv_file = path.join('/Users/Adithep/Desktop/αSys/csv', 'cities5000.txt')
@@ -92,9 +117,12 @@ Meteor.startup ->
 
 
 
-  c = path.join('/Users/Adithep/Desktop/αSys/json', 'cities.json')
-  h = DATA.find({type: 'city'}, {fields: _id: 0}).fetch()
-  fs.writeFile c, JSON.stringify(h), (err) ->
+  c = path.join('/Users/Adithep/Desktop/αSys/json', 'currency.json')
+  h = DATA.find({type: shit2._id}, {fields: _id: 0, country: 0}).fetch()
+  _.map h, (obj) ->
+    obj.type = "currency"
+    return
+  fs.writeFile c, EJSON.stringify(h, indent: true), (err) ->
     if err
       throw err
     else
@@ -155,11 +183,28 @@ Meteor.startup ->
     _.map button_list, (num) ->
       a = DATA.findOne(name: num.type)
       num.type = a._id
-      if num.select_database
-        b = DATA.findOne(name: num.select_database)
-        num.select_database = b._id
+      _.map num.input, (numa) ->
+        if numa.select_database
+          b = DATA.findOne(name: numa.select_database)
+          numa.select_database = b._id
+          return
+        if numa.input_select_database
+          b = DATA.findOne(name: numa.input_select_database)
+          numa.input_select_database = b._id
+          return
       DATA.insert(num)
 
     console.log "button lists inserted"
+
+  else if DATA.find(type: shit1._id).count() is 0
+
+    initials_list = EJSON.parse(Assets.getText("initials_list.json"))
+
+    _.map initials_list, (num) ->
+      a = DATA.findOne(name: num.type)
+      num.type = a._id
+      DATA.insert(num)
+
+    console.log "initials lists inserted"
     
 
