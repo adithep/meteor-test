@@ -18,5 +18,9 @@
   {
     "name": "city",
     "type": "type"
+  },
+  {
+    "name": "currency",
+    "type": "type"
   }
 ]
