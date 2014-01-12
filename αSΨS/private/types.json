@@ -22,5 +22,13 @@
   {
     "name": "currency",
     "type": "type"
+  },
+  {
+    "name": "service",
+    "type": "type"
+  },
+  {
+    "name": "reach_type",
+    "type": "type"
   }
 ]
