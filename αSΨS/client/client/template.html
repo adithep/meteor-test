@@ -1,1 +1,164 @@
-<head><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>αSΨS</title></head><body></body><template name="layout">{{> _init_foundation}}<div id="parent"><nav data-topbar="data-topbar" class="top-bar"><ul class="title-area"><li class="name"><h1><a href="/">αSΨS</a></h1></li><li class="toggle-topbar menu-icon"><a><span>Menu</span></a></li></ul><section class="top-bar-section"><ul class="left"><li class="divider"></li><li><a data-path="an" href="/moduletest">moduleTest</a></li><li><a data-path="an" href="/add_contact">Add Contact</a></li></ul><ul class="right"><li class="divider"></li><li class="has-dropdown"><a>User : {{currentUser.username}}</a><ul class="dropdown"><li><a id="logout">logout</a></li></ul></li></ul></section></nav><div class="row"><div class="large-12 columns"></div>{{>yield}}</div></div></template><template name="add_contact"><h1>Add Contacts</h1><a class="right button save_contact_json alert">Save</a><div class="row"><div class="large-2 columns"><a class="button individual">Individual</a></div><div class="large-2 columns left"><a class="button company">Company</a></div></div>{{#if company}}<div class="row company_div">{{#each input_company}} {{> contact_button}} {{/each}}</div><div class="row"><ul class="button-group radius">{{#each buttons_company}}<li><a data-id="{{_id._str}}" class="button tiny add_contact_button_company">{{inner_html}}</a></li>{{/each}}</ul></div>{{else}}<div class="row individual_div">{{#each input_individual}} {{> contact_button}} {{/each}}</div><div class="row"><ul class="button-group radius">{{#each buttons_individual}}<li><a data-id="{{_id._str}}" class="button tiny add_contact_button_individual">{{inner_html}}</a></li>{{/each}}</ul></div>{{/if}}<a class="submit button">Submit</a></template><template name="contact_button"><div data-id="{{_id}}" data-array="{{array}}" class="{{columns}} left input_obj"><div class="row collapse">{{#each this.input}}{{#if input_name}}<div class="{{input_columns}}"><input type="{{input_type}}" placeholder="{{input_placeholder}}" name="{{input_name}}" class="{{input_class}}"></div>{{/if}} {{#if select_name}}<div class="{{select_columns}}"><select name="{{select_name}}" class="{{select_class}} {{select_database}}">{{#each countries this.select_database._str}} {{#if default}}<option value="{{this._id._str}}" selected="selected">{{this.name}}</option>{{else}}<option value="{{this._id._str}}">{{this.name}}</option>{{/if}} {{/each}}</select></div>{{/if}} {{#if input_select_name}}<div class="{{input_select_columns}}"><input type="{{input_type}}" autocomplete="off" placeholder="{{input_placeholder}}" name="{{input_select_name}}" data-database="{{input_select_database._str}}" class="input_select {{input_select_class}}"><div id="cities" class="panel input_select_box"><ul class="input_select_list">{{#each input_select input_select_database._str}} {{> select_list}} {{/each}}</ul></div></div>{{/if}} {{#if close}}<div class="{{input_close}}"><a data-id="{{_id}}" class="button postfix alert {{remove}}">X</a></div>{{/if}} {{/each}}</div></div></template><template name="select_list"><li data-value="{{this._id._str}}" class="lala_item {{this.e_class}}">{{this.name}} {{this.country}}</li></template><template name="moduleTest"><dl class="sub-nav"><dt>Click:</dt><dd><a data-path="an" href="{{route 'an'}}" class="add">an</a></dd><dd><a data-path="lu" href="{{route 'lu'}}" class="add">lu</a></dd><dd><a data-path="postlists" href="{{route 'postlists'}}" class="add">postlists</a></dd></dl><div id="child"></div></template><template name="postlists">{{> posts this}}</template><template name="an"><div class="an panel"><h1>αan</h1><a href="{{close 'an'}}" class="close">Click</a><br><button class="click">log</button></div></template><template name="lu"><div class="lu panel"><h1>αlu</h1><a href="{{close 'lu'}}" class="close">Click</a></div></template><template name="login"><div id="logindiv" class="row"><div class="large-12 columns"><h1>Login</h1>{{#if currentUser.username}} {{else}} {{#if loggingIn}}<p>Logging in...</p>{{else}} {{#if creatingAccount}} {{>newAccountForm}} {{else}} {{>loginForm}} {{/if}} {{/if}} {{/if}}</div></div></template><template name="newAccountForm"><input type="text" id="email" placeholder="email"><input type="text" id="name" placeholder="name"><input type="text" id="username" placeholder="username"><input type="password" id="password" placeholder="password"><button id="createaccount">Create</button><p id="loginform">(Login)</p></template><template name="loginForm"><input type="text" id="username" placeholder="username"><input type="password" id="password" placeholder="password"><button id="login">Login</button><br><button id="accountform">Create Account</button></template>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>αSΨS</title>
+</head>
+<body></body>
+<template name="layout">{{> _init_foundation}}
+  <div id="parent">
+    <nav data-topbar="data-topbar" class="top-bar">
+      <ul class="title-area">
+        <li class="name">
+          <h1><a href="/">αSΨS</a></h1>
+        </li>
+        <li class="toggle-topbar menu-icon"><a><span>Menu</span></a></li>
+      </ul>
+      <section class="top-bar-section">
+        <ul class="left">
+          <li class="divider"></li>
+          <li><a data-path="an" href="/moduletest">moduleTest</a></li>
+          <li><a data-path="an" href="/add_contact">Add Contact</a></li>
+          <li><a data-path="an" href="/display_contact">Display Contact</a></li>
+        </ul>
+        <ul class="right">
+          <li class="divider"></li>
+          <li class="has-dropdown"><a>User : {{currentUser.username}}</a>
+            <ul class="dropdown">
+              <li><a id="logout">logout</a></li>
+            </ul>
+          </li>
+        </ul>
+      </section>
+    </nav>
+    <div class="row">
+      <div class="large-12 columns"></div>{{>yield}}
+    </div>
+  </div>
+</template>
+<template name="display_contact">
+  <h1>Display Contacts</h1>{{#each humans}}
+  <div class="panel"><a data-id="{{this._id._str}}" class="right button tiny delete_human alert">X</a>
+    <h3 class="center_text"> <a data-id="{{this.full_name.initials}}">{{this.full_name.initials_name}} </a><a>{{this.full_name.first_name}} </a><a>{{this.full_name.middle_name}} </a><a>{{this.full_name.last_name}} </a></h3>{{#each this.aggregate.imp}}
+    {{> nu}}
+    {{/each}}
+  </div>{{/each}}
+</template>
+<template name="nu">
+  <div data-alert="data-alert" class="alert-box radius info yo"><a data-id="{{this.keyid}}">{{this.key}} </a><a data-id="{{this.id}}" data-curid="{{this.curid}}" data-tooltip="data-tooltip" title="{{this.tip}}" class="{{this.class}} has-tip">{{this.value}} </a></div>
+</template>
+<template name="add_contact">
+  <h1>Add Contacts</h1><a class="right button save_contact_json alert">Save</a>
+  <div class="row">
+    <div class="large-2 columns"><a class="button individual">Individual</a></div>
+    <div class="large-2 columns left"><a class="button company">Company</a></div>
+  </div>{{#if company}}
+  <div class="row company_div">
+    {{#each input_company}}
+    {{> contact_button}}
+    {{/each}}
+  </div>
+  <div class="row">
+    <ul class="button-group radius">{{#each buttons_company}}
+      <li> <a data-id="{{_id._str}}" class="button tiny add_contact_button_company">{{inner_html}}</a></li>{{/each}}
+    </ul>
+  </div>{{else}}
+  <div class="row individual_div">
+    {{#each input_individual}}
+    {{> contact_button}}
+    {{/each}}
+  </div>
+  <div class="row">
+    <ul class="button-group radius">{{#each buttons_individual}}
+      <li> <a data-id="{{_id._str}}" class="button tiny add_contact_button_individual">{{inner_html}}</a></li>{{/each}}
+    </ul>
+  </div>{{/if}}<a class="submit button">Submit</a>
+</template>
+<template name="contact_button">
+  <div data-id="{{_id._str}}" data-objt="{{parent_obj_t}}" data-idd="{{id._str}}" class="{{columns}} left input_obj">
+    <div class="row collapse">{{#each this.input}}{{#if input_name}}
+      <div class="{{input_columns}}">{{#if this.date_t}}
+        <input type="{{input_type}}" value="{{date_t}}" placeholder="{{input_placeholder}}" name="{{input_name}}" class="{{input_class}}">{{else}}
+        <input type="{{input_type}}" placeholder="{{input_placeholder}}" name="{{input_name}}" class="{{input_class}}">{{/if}}
+        <div data-alert="data-alert" class="alert-box alaa warning"><span>invalid</span></div>
+      </div>{{/if}}
+      {{#if select_name}}
+      <div class="{{select_columns}}">
+        <select name="{{select_name}}" class="{{select_class}} {{select_database}}">
+          {{#each countries this.select_database._str}}
+          {{#if default}}
+          <option value="{{this._id._str}}" selected="selected" data-def="1">{{this.name}}</option>{{else}}
+          <option value="{{this._id._str}}">{{this.name}}</option>{{/if}}
+          {{/each}}
+        </select>
+      </div>{{/if}}
+      {{#if input_select_name}}
+      <div class="{{input_select_columns}}">
+        <input type="{{input_type}}" autocomplete="off" placeholder="{{input_placeholder}}" name="{{input_select_name}}" data-database="{{input_select_database._str}}" class="input_select {{input_select_class}}">
+        <div id="cities" class="panel input_select_box">
+          <ul class="input_select_list">
+            {{#each input_select input_select_database._str}}
+            {{> select_list}}
+            {{/each}}
+          </ul>
+        </div>
+      </div>{{/if}}
+      {{#if close}}
+      <div class="{{input_close}}"><a class="button postfix alert {{remove}}">X</a></div>{{/if}}
+      {{/each}}
+    </div>
+  </div>
+</template>
+<template name="select_list">
+  <li data-value="{{this._id._str}}" class="lala_item {{this.e_class}}">{{this.name}} {{this.country}}</li>
+</template>
+<template name="moduleTest">
+  <dl class="sub-nav">
+    <dt>Click:</dt>
+    <dd><a data-path="an" href="{{route 'an'}}" class="add">an</a></dd>
+    <dd><a data-path="lu" href="{{route 'lu'}}" class="add">lu</a></dd>
+    <dd><a data-path="postlists" href="{{route 'postlists'}}" class="add">postlists</a></dd>
+  </dl>
+  <div id="child"></div>
+</template>
+<template name="postlists">{{> posts this}}</template>
+<template name="an">
+  <div class="an panel">
+    <h1>αan</h1><a href="{{close 'an'}}" class="close">Click</a><br>
+    <button class="click">log</button>
+  </div>
+</template>
+<template name="lu">
+  <div class="lu panel">
+    <h1>αlu</h1><a href="{{close 'lu'}}" class="close">Click</a>
+  </div>
+</template>
+<template name="login">
+  <div id="logindiv" class="row">
+    <div class="large-12 columns">
+      <h1>Login</h1>{{#if currentUser.username}}
+      {{else}}
+      {{#if loggingIn}}
+      <p>Logging in...</p>{{else}}
+      {{#if creatingAccount}}
+      {{>newAccountForm}}
+      {{else}}
+      {{>loginForm}}
+      {{/if}}
+      {{/if}}
+      {{/if}}
+    </div>
+  </div>
+</template>
+<template name="newAccountForm">
+  <input type="text" id="email" placeholder="email">
+  <input type="text" id="name" placeholder="name">
+  <input type="text" id="username" placeholder="username">
+  <input type="password" id="password" placeholder="password">
+  <button id="createaccount">Create</button>
+  <p id="loginform">(Login)</p>
+</template>
+<template name="loginForm">
+  <input type="text" id="username" placeholder="username">
+  <input type="password" id="password" placeholder="password">
+  <button id="login">Login</button><br>
+  <button id="accountform">Create Account</button>
+</template>
